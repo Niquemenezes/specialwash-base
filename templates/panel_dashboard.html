@@ -1,0 +1,70 @@
+{% extends 'panel_base.html' %}
+{% block content %}
+<div class="row g-4">
+  <div class="col-md-4">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h2 class="h5">Crear producto</h2>
+        <form method="post" action="/panel/productos">
+          <div class="mb-2">
+            <label class="form-label">Nombre</label>
+            <input name="nombre" class="form-control" required>
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Stock mínimo</label>
+            <input type="number" name="stock_minimo" class="form-control" value="0" min="0">
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Categoría</label>
+            <input name="categoria" class="form-control">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Detalle</label>
+            <input name="detalle" class="form-control">
+          </div>
+          <button class="btn btn-dark w-100">Crear</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-8">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h2 class="h5">Stock</h2>
+        <table class="table table-sm align-middle">
+          <thead>
+            <tr>
+              <th>ID</th><th>Producto</th><th>Stock</th><th>Mín.</th><th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in productos %}
+            <tr>
+              <td>{{p.id}}</td>
+              <td>{{p.nombre}}</td>
+              <td>{{p.stock_actual}}</td>
+              <td>{{p.stock_minimo}}</td>
+              <td>
+                <form class="d-inline" method="post" action="/panel/stock/entrada">
+                  <input type="hidden" name="producto_id" value="{{p.id}}">
+                  <input type="number" class="form-control d-inline w-auto" name="cantidad" min="1" value="1">
+                  <input type="text" class="form-control d-inline w-auto" name="observaciones" placeholder="Obs">
+                  <button class="btn btn-success btn-sm">Entrada</button>
+                </form>
+                <form class="d-inline ms-1" method="post" action="/panel/stock/salida">
+                  <input type="hidden" name="producto_id" value="{{p.id}}">
+                  <input type="number" class="form-control d-inline w-auto" name="cantidad" min="1" value="1">
+                  <input type="text" class="form-control d-inline w-auto" name="observaciones" placeholder="Obs">
+                  <button class="btn btn-danger btn-sm">Salida</button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,115 @@
+{% extends 'admin_base.html' %}
+{% block content %}
+<div class="row g-4">
+  <div class="col-md-4">
+    <div class="card shadow-sm"><div class="card-body">
+      <h2 class="h6">Crear producto</h2>
+      <form method="post" action="/admin/productos">
+        <div class="mb-2"><label class="form-label">Nombre</label><input name="nombre" class="form-control" required></div>
+        <div class="mb-2"><label class="form-label">Stock mínimo</label><input type="number" name="stock_minimo" class="form-control" value="0" min="0"></div>
+        <div class="mb-2"><label class="form-label">Categoría</label><input name="categoria" class="form-control"></div>
+        <div class="mb-3"><label class="form-label">Detalle</label><input name="detalle" class="form-control"></div>
+        <button class="btn btn-dark w-100">Crear</button>
+      </form>
+    </div></div>
+  </div>
+
+  <div class="col-md-8">
+    <div class="card shadow-sm mb-3"><div class="card-body">
+      <h2 class="h6">Control de stock</h2>
+      <div class="row g-2">
+        <div class="col-md-6">
+          <form method="post" action="/admin/stock/entrada" class="row g-2 align-items-end">
+            <div class="col-12"><label class="form-label">Producto</label>
+              <select class="form-select" name="producto_id">{% for p in productos %}<option value="{{p.id}}">{{p.nombre}}</option>{% endfor %}</select>
+            </div>
+            <div class="col-4"><label class="form-label">Cantidad</label><input type="number" class="form-control" name="cantidad" value="1" min="1"></div>
+            <div class="col-8"><label class="form-label">Obs</label><input class="form-control" name="observaciones"></div>
+            <div class="col-12"><button class="btn btn-success w-100">Entrada</button></div>
+          </form>
+        </div>
+        <div class="col-md-6">
+          <form method="post" action="/admin/stock/salida" class="row g-2 align-items-end">
+            <div class="col-12"><label class="form-label">Producto</label>
+              <select class="form-select" name="producto_id">{% for p in productos %}<option value="{{p.id}}">{{p.nombre}}</option>{% endfor %}</select>
+            </div>
+            <div class="col-4"><label class="form-label">Cantidad</label><input type="number" class="form-control" name="cantidad" value="1" min="1"></div>
+            <div class="col-8"><label class="form-label">Obs</label><input class="form-control" name="observaciones"></div>
+            <div class="col-12"><button class="btn btn-danger w-100">Salida</button></div>
+          </form>
+        </div>
+      </div>
+    </div></div>
+
+    <div class="card shadow-sm"><div class="card-body">
+      <h2 class="h6">Productos</h2>
+      <table class="table table-sm align-middle">
+        <thead><tr><th>ID</th><th>Nombre</th><th>Stock</th><th>Mín.</th><th>Activo</th><th></th></tr></thead>
+        <tbody>
+          {% for p in productos %}
+          <tr>
+            <td>{{p.id}}</td>
+            <td>{{p.nombre}}</td>
+            <td>{{p.stock_actual}}</td>
+            <td>{{p.stock_minimo}}</td>
+            <td>{% if p.activo %}<span class="badge bg-success">Sí</span>{% else %}<span class="badge bg-secondary">No</span>{% endif %}</td>
+            <td class="text-nowrap">
+              <a class="btn btn-outline-secondary btn-sm" href="/admin/productos/{{p.id}}/edit">Editar</a>
+              <form method="post" action="/admin/productos/{{p.id}}/delete" class="d-inline" onsubmit="return confirm('¿Eliminar producto {{p.nombre}}?');">
+                <button class="btn btn-outline-danger btn-sm">Eliminar</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div></div>
+  </div>
+</div>
+
+<div class="row g-4 mt-1">
+  <div class="col-md-6">
+    <div class="card shadow-sm"><div class="card-body">
+      <h2 class="h6 mb-2">Historial · Últimas entradas</h2>
+      <table class="table table-sm">
+        <thead><tr><th>Fecha</th><th>Producto</th><th>Cant.</th><th>Obs</th></tr></thead>
+        <tbody>
+          {% for e in entradas %}
+          <tr>
+            <td>{{ e.fecha.strftime('%Y-%m-%d %H:%M') }}</td>
+            <td>{{ e.producto.nombre if e.producto else e.producto_id }}</td>
+            <td>{{ e.cantidad }}</td>
+            <td>{{ e.observaciones or '' }}</td>
+          </tr>
+          {% endfor %}
+          {% if entradas|length == 0 %}
+          <tr><td colspan="4" class="text-center text-muted">Sin movimientos</td></tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div></div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="card shadow-sm"><div class="card-body">
+      <h2 class="h6 mb-2">Historial · Últimas salidas</h2>
+      <table class="table table-sm">
+        <thead><tr><th>Fecha</th><th>Producto</th><th>Cant.</th><th>Obs</th></tr></thead>
+        <tbody>
+          {% for s in salidas %}
+          <tr>
+            <td>{{ s.fecha.strftime('%Y-%m-%d %H:%M') }}</td>
+            <td>{{ s.producto.nombre if s.producto else s.producto_id }}</td>
+            <td>{{ s.cantidad }}</td>
+            <td>{{ s.observaciones or '' }}</td>
+          </tr>
+          {% endfor %}
+          {% if salidas|length == 0 %}
+          <tr><td colspan="4" class="text-center text-muted">Sin movimientos</td></tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div></div>
+  </div>
+</div>
+{% endblock %}
