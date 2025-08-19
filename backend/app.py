@@ -1,4 +1,3 @@
-
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
@@ -23,15 +22,17 @@ def create_app():
     app.config.from_object(get_config())
     app.config['TEMPLATES_AUTO_RELOAD'] = True
 
-    CORS(app, resources={r"/api/*": {"origins": app.config.get("CORS_ORIGINS", "*")}})
+    # ✅ CORS para permitir frontend desde cualquier subdominio GitHub Codespace
+    CORS(app, resources={r"/api/*": {"origins": r"https://.*\.app\.github\.dev"}}, supports_credentials=True)
+
     db.init_app(app)
     Migrate(app, db)
     JWTManager(app)
 
-    # Blueprints
+    # ✅ Blueprints
     app.register_blueprint(api_bp, url_prefix="/api")
     setup_superadmin(app)
-    app.register_blueprint(admin_bp)   # <- solo admin minimal
+    app.register_blueprint(admin_bp)
 
     @app.get("/")
     def root():
@@ -39,6 +40,10 @@ def create_app():
 
     @app.get("/health")
     def health():
+        return {"status": "ok"}
+
+    @app.get("/api/health")
+    def api_health():
         return {"status": "ok"}
 
     @app.errorhandler(404)
@@ -58,6 +63,7 @@ def create_app():
 
     return app
 
+# ✅ Crear la app final
 app = create_app()
 
 if __name__ == "__main__":
