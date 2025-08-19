@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: specialwash-backend
+    env: python
+    plan: free
+    region: frankfurt      # EU (más cerca de Madrid)
+    buildCommand: "pip install -r requirements.txt || pip install -r backend/requirements.txt"
+    startCommand: "gunicorn -w 2 -k gthread -t 120 -b 0.0.0.0:$PORT backend.wsgi:app"
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.8
+      - key: SECRET_KEY
+        sync: false         # la pones en el panel de Render
+      - key: JWT_SECRET_KEY
+        sync: false         # la pones en el panel de Render
+      - key: CORS_ORIGINS
+        value: "*"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: specialwash-db
+          property: connectionString
+
+databases:
+  - name: specialwash-db
+    plan: free
+    region: frankfurt
