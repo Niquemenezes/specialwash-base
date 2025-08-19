@@ -7,9 +7,7 @@ services:
     name: specialwash-backend
     env: python
     plan: free
-    buildCommand: |
-      echo "python-3.10.13" > runtime.txt
-      pip install -r requirements.txt || pip install -r backend/requirements.txt
+    buildCommand: pip install -r requirements.txt || pip install -r backend/requirements.txt
     startCommand: gunicorn -w 2 -k gthread -t 120 -b 0.0.0.0:$PORT backend.app:app
     envVars:
       - key: DATABASE_URL
@@ -28,21 +26,16 @@ services:
           type: web
           property: url
 
-  # --- Frontend estático (Create React App build) ---
   - type: web
     name: specialwash-frontend
     runtime: static
-    # Construye la app React (monorepo)
     buildCommand: cd specialwash-base-frontend && npm ci && npm run build
-    # Publica la carpeta resultante del build (relativa a la raíz del repo)
     staticPublishPath: specialwash-base-frontend/build
-    # Rewrites para React Router (SPA)
     routes:
       - type: rewrite
         source: /*
         destination: /index.html
     envVars:
-      # La app React conocerá la URL del backend en Render
       - key: REACT_APP_BACKEND_URL
         fromService:
           name: specialwash-backend
