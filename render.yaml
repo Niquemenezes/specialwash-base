@@ -3,12 +3,14 @@ databases:
     plan: free
 
 services:
+  # --- Backend Flask ---
   - type: web
     name: specialwash-backend
-    env: python
+    runtime: python
     plan: free
     buildCommand: pip install -r requirements.txt || pip install -r backend/requirements.txt
     startCommand: gunicorn -w 2 -k gthread -t 120 -b 0.0.0.0:$PORT backend.app:app
+    healthCheckPath: /api/health
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -20,22 +22,30 @@ services:
         generateValue: true
       - key: FLASK_ENV
         value: production
-      # ✅ CORS: permitir el origen del frontend desplegado en Render
+      # CORS: Permitimos el origen público del frontend en Render
       - key: CORS_ORIGINS
         fromService:
           name: specialwash-frontend
-          type: static
-          property: url
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
 
-  - type: static
+  # --- Frontend estático (Create React App build) ---
+  - type: web
     name: specialwash-frontend
-    plan: free
+    runtime: static
+    # Construye la app React (monorepo)
     buildCommand: cd specialwash-base-frontend && npm ci && npm run build
-    publishPath: specialwash-base-frontend/build
+    # Publica la carpeta resultante del build (relativa a la raíz del repo)
+    staticPublishPath: specialwash-base-frontend/build
+    # Rewrites para React Router (SPA)
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
     envVars:
-      # ✅ El frontend conocerá la URL del backend renderizado
+      # La app React conocerá la URL del backend en Render
       - key: REACT_APP_BACKEND_URL
         fromService:
           name: specialwash-backend
           type: web
-          property: url
+          envVarKey: RENDER_EXTERNAL_URL
