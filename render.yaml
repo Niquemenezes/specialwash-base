@@ -1,28 +1,41 @@
+databases:
+  - name: specialwash-db
+    plan: free
+
 services:
   - type: web
     name: specialwash-backend
     env: python
     plan: free
-    region: frankfurt      # EU (más cerca de Madrid)
-    buildCommand: "pip install -r requirements.txt || pip install -r backend/requirements.txt"
-    startCommand: "gunicorn -w 2 -k gthread -t 120 -b 0.0.0.0:$PORT backend.wsgi:app"
-    healthCheckPath: /health
-    autoDeploy: true
+    buildCommand: pip install -r requirements.txt || pip install -r backend/requirements.txt
+    startCommand: gunicorn -w 2 -k gthread -t 120 -b 0.0.0.0:$PORT backend.app:app
     envVars:
-      - key: PYTHON_VERSION
-        value: 3.11.8
-      - key: SECRET_KEY
-        sync: false         # la pones en el panel de Render
-      - key: JWT_SECRET_KEY
-        sync: false         # la pones en el panel de Render
-      - key: CORS_ORIGINS
-        value: "*"
       - key: DATABASE_URL
         fromDatabase:
           name: specialwash-db
           property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: FLASK_ENV
+        value: production
+      # ✅ CORS: permitir el origen del frontend desplegado en Render
+      - key: CORS_ORIGINS
+        fromService:
+          name: specialwash-frontend
+          type: static
+          property: url
 
-databases:
-  - name: specialwash-db
+  - type: static
+    name: specialwash-frontend
     plan: free
-    region: frankfurt
+    buildCommand: cd specialwash-base-frontend && npm ci && npm run build
+    publishPath: specialwash-base-frontend/build
+    envVars:
+      # ✅ El frontend conocerá la URL del backend renderizado
+      - key: REACT_APP_BACKEND_URL
+        fromService:
+          name: specialwash-backend
+          type: web
+          property: url

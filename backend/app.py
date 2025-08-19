@@ -22,14 +22,21 @@ def create_app():
     app.config.from_object(get_config())
     app.config['TEMPLATES_AUTO_RELOAD'] = True
 
-    # ✅ CORS para permitir frontend desde cualquier subdominio GitHub Codespace
-    CORS(app, resources={r"/api/*": {"origins": r"https://.*\.app\.github\.dev"}}, supports_credentials=True)
+    # CORS: acepta cualquier subdominio de Codespaces y lo que definas en CORS_ORIGINS
+    origins_env = os.getenv("CORS_ORIGINS", r"https://.*\.app\.github\.dev")
+    CORS(
+        app,
+        resources={r"/api/.*": {"origins": origins_env}},
+        supports_credentials=False,  # usamos JWT en header; no cookies
+        methods=["GET","POST","PUT","PATCH","DELETE","OPTIONS"],
+        allow_headers=["Content-Type","Authorization"]
+    )
 
     db.init_app(app)
     Migrate(app, db)
     JWTManager(app)
 
-    # ✅ Blueprints
+    # Blueprints
     app.register_blueprint(api_bp, url_prefix="/api")
     setup_superadmin(app)
     app.register_blueprint(admin_bp)
@@ -63,7 +70,6 @@ def create_app():
 
     return app
 
-# ✅ Crear la app final
 app = create_app()
 
 if __name__ == "__main__":
