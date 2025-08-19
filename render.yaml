@@ -3,14 +3,14 @@ databases:
     plan: free
 
 services:
-  # --- Backend Flask ---
   - type: web
     name: specialwash-backend
-    runtime: python
+    env: python
     plan: free
-    buildCommand: pip install -r requirements.txt || pip install -r backend/requirements.txt
+    buildCommand: |
+      echo "python-3.10.13" > runtime.txt
+      pip install -r requirements.txt || pip install -r backend/requirements.txt
     startCommand: gunicorn -w 2 -k gthread -t 120 -b 0.0.0.0:$PORT backend.app:app
-    healthCheckPath: /api/health
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -22,12 +22,11 @@ services:
         generateValue: true
       - key: FLASK_ENV
         value: production
-      # CORS: Permitimos el origen público del frontend en Render
       - key: CORS_ORIGINS
         fromService:
           name: specialwash-frontend
           type: web
-          envVarKey: RENDER_EXTERNAL_URL
+          property: url
 
   # --- Frontend estático (Create React App build) ---
   - type: web
