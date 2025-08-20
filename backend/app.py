@@ -49,7 +49,6 @@ def create_app():
         app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///local.db"
 
     # --- CORS ---
-    # Acepta cualquier Codespace por defecto; o lo que definas en CORS_ORIGINS
     origins_env = os.getenv("CORS_ORIGINS", r"https://.*\.app\.github\.dev")
     CORS(app, resources={r"/api/*": {"origins": origins_env}}, supports_credentials=True)
 
@@ -89,12 +88,13 @@ def create_app():
             return jsonify({"error": "Method Not Allowed", "path": request.path}), 405
         return e
 
-    # Importante: NO hacemos db.create_all() aquí; usa migraciones (flask db upgrade)
+    # Importante: NO hacer db.create_all(); usa migraciones (flask db upgrade)
     return app
+
 
 
 app = create_app()
 
 if __name__ == "__main__":
-    port = int(os.getenv("PORT", 5000))
+    port = int(os.getenv("PORT", 3001))
     app.run(host="0.0.0.0", port=port, debug=True)
