@@ -10,9 +10,11 @@ services:
     plan: free
     region: frankfurt
     rootDir: .
-    buildCommand: pip install -r requirements.txt
+    # ⚠️ instala SOLO las deps del backend
+    buildCommand: pip install -r backend/requirements.txt
     startCommand: gunicorn backend.app:app
     autoDeploy: true
+    postDeployCommand: flask db upgrade
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -20,22 +22,21 @@ services:
           property: connectionString
       - key: SECRET_KEY
         generateValue: true
-      - key: PYTHON_VERSION
-        value: 3.11.9
+      - key: JWT_SECRET_KEY
+        generateValue: true
       - key: FLASK_ENV
         value: production
-      - key: CORS_ORIGINS
-        value: https://specialwash-frontend.onrender.com
       - key: FLASK_APP
         value: backend/app.py
-    postDeployCommand: "flask db upgrade"
+      - key: CORS_ORIGINS
+        value: https://specialwash-frontend.onrender.com
 
   - type: static
     name: specialwash-frontend
     plan: free
     region: frankfurt
     rootDir: specialwash-base-frontend
-    buildCommand: npm install && npm run build
+    buildCommand: npm ci && npm run build
     publishPath: build
     envVars:
       - key: REACT_APP_BACKEND_URL
@@ -43,3 +44,6 @@ services:
           name: specialwash-backend
           type: web
           property: url
+      # opcional, para evitar líos con versiones antiguas de Node:
+      - key: NODE_VERSION
+        value: "20"
