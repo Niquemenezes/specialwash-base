@@ -24,14 +24,7 @@ def create_app():
 
     # CORS: acepta cualquier subdominio de Codespaces y lo que definas en CORS_ORIGINS
     origins_env = os.getenv("CORS_ORIGINS", r"https://.*\.app\.github\.dev")
-    CORS(
-        app,
-        resources={r"/api/.*": {"origins": origins_env}},
-        supports_credentials=False,  # usamos JWT en header; no cookies
-        methods=["GET","POST","PUT","PATCH","DELETE","OPTIONS"],
-        allow_headers=["Content-Type","Authorization"]
-    )
-
+    CORS(app, resources={r"/api/*": {"origins": os.getenv("CORS_ORIGINS", "*")}}, supports_credentials=True)
     db.init_app(app)
     Migrate(app, db)
     JWTManager(app)
