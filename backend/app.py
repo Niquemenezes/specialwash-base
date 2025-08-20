@@ -4,12 +4,14 @@ from flask_jwt_extended import JWTManager
 from flask_migrate import Migrate
 from dotenv import load_dotenv
 import os, re
+
 from .models import User, Producto, RegistroEntrada, RegistroSalida
 from .config import get_config
 from .db import db
 from .routes import api_bp
 from .superadmin import setup_superadmin
 from .admin import admin_bp
+from .routes_users import users_bp
 
 load_dotenv()
 
@@ -17,23 +19,29 @@ def _parse_cors_origins() -> list:
     """
     Lee CORS_ORIGINS y la sanea (sin \n / \r, sin espacios extra).
     Acepta varios orígenes separados por coma.
-    Si no hay variable, usa defaults útiles para dev (Codespaces + localhost).
+    Si no hay variable, usa defaults útiles (Render + local).
     """
     raw = os.getenv("CORS_ORIGINS", "").strip()
     if raw:
         raw = raw.replace("\r", ",").replace("\n", ",")
         items = [p.strip() for p in raw.split(",") if p.strip()]
         return items
-    # valores por defecto (solo en desarrollo)
+
+    # ⚠️ Defaults si no defines CORS_ORIGINS:
     return [
+        # Tu frontend en Render (actualiza si cambia el subdominio)
+        "https://specialwash-frontend-lxrh.onrender.com",
+        # Local dev
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        # Codespaces (permitir subdominios *.app.github.dev)
         re.compile(r"https://.*\.app\.github\.dev$"),
-        "http://localhost:3000", "http://127.0.0.1:3000",
     ]
 
 def _fix_database_url(url: str) -> str:
     """
     Render suele dar DATABASE_URL con 'postgres://'.
-    Para SQLAlchemy + psycopg3 forzamos el driver explícito 'postgresql+psycopg://'.
+    Para SQLAlchemy + psycopg3 forzamos 'postgresql+psycopg://'.
     """
     if not url:
         return ""
@@ -64,27 +72,29 @@ def create_app():
         # fallback local para desarrollo
         app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///local.db"
 
-    # --- CORS robusto (sin credenciales) ---
+    # --- CORS ---
     origins = _parse_cors_origins()
     CORS(
         app,
-        resources={r"/api/*": {
-            "origins": origins,
-            "methods": ["GET","POST","PUT","PATCH","DELETE","OPTIONS"],
-            "allow_headers": ["Content-Type","Authorization"],
-            # Si algún día usas cookies de sesión, activa supports_credentials=True
-            # y asegúrate de que CORS_ORIGINS sea 1+ orígenes exactos (sin comodines).
-        }},
+        resources={
+            r"/api/*": {
+                "origins": origins,
+                "methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+                "allow_headers": ["Content-Type", "Authorization"],
+                # Si algún día usas cookies (SameSite=None) activa esto:
+                # "supports_credentials": True,
+            }
+        },
     )
 
-    
-       # --- Extensiones ---
+    # --- Extensiones ---
     db.init_app(app)
     Migrate(app, db)
     JWTManager(app)
 
     # --- Blueprints ---
     app.register_blueprint(api_bp, url_prefix="/api")
+    app.register_blueprint(users_bp, url_prefix="/api")
     setup_superadmin(app)
     app.register_blueprint(admin_bp)
 
@@ -114,12 +124,10 @@ def create_app():
             return jsonify({"error": "Method Not Allowed", "path": request.path}), 405
         return e
 
-    # Importante: NO hacer db.create_all(); usa migraciones (flask db upgrade)
-        # --- SOLO para desbloquear prod si aún no hay migraciones ---
+    # --- SOLO para desbloquear prod si aún no hay migraciones ---
     # Crea tablas una vez cuando AUTO_CREATE_TABLES=1 (y luego quita la env var)
     with app.app_context():
         if os.getenv("AUTO_CREATE_TABLES") == "1":
-            # importa modelos para registrar metadata
             from .models import User, Producto, RegistroEntrada, RegistroSalida
             db.create_all()
 
