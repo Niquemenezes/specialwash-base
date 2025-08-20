@@ -21,7 +21,7 @@ services:
       - key: SECRET_KEY
         generateValue: true
       - key: PYTHON_VERSION
-        value: 3.10.13
+        value: 3.11.9
       - key: FLASK_ENV
         value: production
       - key: CORS_ORIGINS
