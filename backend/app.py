@@ -115,6 +115,14 @@ def create_app():
         return e
 
     # Importante: NO hacer db.create_all(); usa migraciones (flask db upgrade)
+        # --- SOLO para desbloquear prod si aún no hay migraciones ---
+    # Crea tablas una vez cuando AUTO_CREATE_TABLES=1 (y luego quita la env var)
+    with app.app_context():
+        if os.getenv("AUTO_CREATE_TABLES") == "1":
+            # importa modelos para registrar metadata
+            from .models import User, Producto, RegistroEntrada, RegistroSalida
+            db.create_all()
+
     return app
 
 app = create_app()
