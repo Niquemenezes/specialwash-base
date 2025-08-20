@@ -4,7 +4,7 @@ from flask_jwt_extended import JWTManager
 from flask_migrate import Migrate
 from dotenv import load_dotenv
 import os, re
-
+from .models import User, Producto, RegistroEntrada, RegistroSalida
 from .config import get_config
 from .db import db
 from .routes import api_bp
@@ -77,7 +77,8 @@ def create_app():
         }},
     )
 
-    # --- Extensiones ---
+    
+       # --- Extensiones ---
     db.init_app(app)
     Migrate(app, db)
     JWTManager(app)
