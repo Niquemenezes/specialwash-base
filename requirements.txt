@@ -13,4 +13,4 @@ Flask-Admin==1.6.1
 
 psycopg[binary]
 
-psycopg[binary]
+
