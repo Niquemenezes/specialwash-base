@@ -1,14 +1,18 @@
 databases:
   - name: specialwash-db
     plan: free
+    region: frankfurt
 
 services:
   - type: web
     name: specialwash-backend
     env: python
     plan: free
-    buildCommand: pip install -r requirements.txt || pip install -r backend/requirements.txt
-    startCommand: gunicorn -w 2 -k gthread -t 120 -b 0.0.0.0:$PORT backend.app:app
+    region: frankfurt
+    rootDir: .
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn backend.app:app
+    autoDeploy: true
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -16,28 +20,26 @@ services:
           property: connectionString
       - key: SECRET_KEY
         generateValue: true
-      - key: JWT_SECRET_KEY
-        generateValue: true
+      - key: PYTHON_VERSION
+        value: 3.11.9
       - key: FLASK_ENV
         value: production
       - key: CORS_ORIGINS
-        fromService:
-          name: specialwash-frontend
-          type: web
-          property: url
+        value: https://specialwash-frontend.onrender.com
+      - key: FLASK_APP
+        value: backend/app.py
+    postDeployCommand: "flask db upgrade"
 
-  - type: web
+  - type: static
     name: specialwash-frontend
-    runtime: static
-    buildCommand: cd specialwash-base-frontend && npm ci && npm run build
-    staticPublishPath: specialwash-base-frontend/build
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html
+    plan: free
+    region: frankfurt
+    rootDir: specialwash-base-frontend
+    buildCommand: npm install && npm run build
+    publishPath: build
     envVars:
       - key: REACT_APP_BACKEND_URL
         fromService:
           name: specialwash-backend
           type: web
-          envVarKey: RENDER_EXTERNAL_URL
+          property: url
