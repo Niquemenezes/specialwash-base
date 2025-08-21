@@ -5,6 +5,7 @@ from flask_migrate import Migrate
 from .config import get_config
 from .db import db
 from .routes import api_bp
+from .compat import compat_bp
 
 migrate = Migrate()
 
@@ -18,10 +19,17 @@ def create_app():
     migrate.init_app(app, db)
     JWTManager(app)
 
+    # API real
     app.register_blueprint(api_bp, url_prefix="/api")
+    # Compat: acepta /auth, /productos, /stock sin /api y redirige con 307
+    app.register_blueprint(compat_bp)
 
     @app.get("/api/health")
     def health():
         return jsonify({"ok": True})
+
+    @app.get("/")
+    def root():
+        return jsonify({"name": "SpecialWash API", "docs": "/api/health"}), 200
 
     return app
